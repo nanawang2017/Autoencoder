@@ -1,0 +1,27 @@
+“”“
+如果我们对隐层单元施加稀疏性约束的话，会得到更为紧凑的表达，只有一小部分神经元会被激活。在Keras中，我们可以通过添加一个activity_regularizer达到对某层激活值进行约束的目的。
+
+encoded = Dense(encoding_dim, activation='relu',activity_regularizer=regularizers.activity_l1(10e-5))(input_img)
+
+把多个自编码器叠起来即加深自编码器的深度，50个epoch后，损失val_loss:0.0926，比1个隐含层的自编码器要好一些。
+”“”
+input_img = Input(shape=(784,))
+encoded = Dense(128, activation='relu')(input_img)
+encoded = Dense(64, activation='relu')(encoded)
+decoded_input = Dense(32, activation='relu')(encoded)
+ 
+decoded = Dense(64, activation='relu')(decoded_input)
+decoded = Dense(128, activation='relu')(decoded)
+decoded = Dense(784, activation='sigmoid')(decoded)
+ 
+autoencoder = Model(inputs=input_img, outputs=decoded)
+encoder = Model(inputs=input_img, outputs=decoded_input)
+ 
+autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
+ 
+autoencoder.fit(x_train, x_train, epochs=50, batch_size=256, 
+                shuffle=True, validation_data=(x_test, x_test))
+ 
+encoded_imgs = encoder.predict(x_test)
+decoded_imgs = autoencoder.predict(x_test)
+
